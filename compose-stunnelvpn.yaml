@@ -1,0 +1,41 @@
+# przy konfiguracji docker rootless konfiguracja będzie nieco się różnić
+# porty ustalamy w klauzurach expose czy ports ustalamy wg własnego uznania, musi się to pokrywać z configami aplikacji!
+version: '3'
+services:
+  openvpn:
+    image: kylemanna/openvpn
+    container_name: openvpn
+    ports:
+      - "1194:1194/tcp"
+    expose:
+      - 1194
+      - 943
+    cap_add:
+      - NET_ADMIN
+    restart: always
+    volumes:
+      - openvpn-data:/etc/openvpn
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Warsaw
+      - INTERFACE=eth0 #optional
+
+  stunnel:
+    image: dweomer/stunnel
+    container_name: stunnel
+    ports:
+      - "443:443/tcp"
+      - "8443:8443"
+    command: stunnel /etc/stunnel/stunnel.conf
+    environment:
+      - STUNNEL_SERVICE=openvpn
+      - STUNNEL_ACCEPT=443
+      - STUNNEL_CONNECT=openvpn:1194
+    volumes:
+      - stunnel-data:/etc/stunnel/
+    restart: always
+
+volumes:
+  stunnel-data:
+  openvpn-data:
